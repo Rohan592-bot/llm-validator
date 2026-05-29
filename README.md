@@ -6,6 +6,16 @@ A middleware layer that guarantees LLM responses match your expected schema — 
 
 ---
 
+## System Architecture & Flow
+
+### System Architecture
+![System Architecture](assets/system_architecture.png)
+
+### Schema Flow Diagram
+![Schema Flow Diagram](assets/flow_diagram.png)
+
+---
+
 ## The problem it solves
 
 You ask the model for JSON. It gives you JSON wrapped in a markdown code block, or with an extra explanation paragraph, or with a field name slightly wrong. Your app breaks.
