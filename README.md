@@ -9,10 +9,10 @@ A middleware layer that guarantees LLM responses match your expected schema — 
 ## System Architecture & Flow
 
 ### System Architecture
-![System Architecture](assets/system_architecture.png)
+![System Architecture](assets/llm_validator_architecture.svg)
 
 ### Schema Flow Diagram
-![Schema Flow Diagram](assets/flow_diagram.png)
+![Schema Flow Diagram](assets/schemas_tab_flowchart.svg)
 
 ---
 
