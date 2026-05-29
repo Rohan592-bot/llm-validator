@@ -91,6 +91,13 @@ node test-data/seed.js
 
 Visit http://localhost:3000
 
+**6. Resetting Logs & Metrics (optional)**
+
+If you want to clear your Failure Log and Metrics tabs without deleting your registered schemas, run this command in your terminal:
+```bash
+node -e "const db = require('./db'); db.prepare('DELETE FROM failures').run(); db.prepare('DELETE FROM calls').run(); console.log('Successfully cleared failures and metrics logs!')"
+```
+
 ---
 
 ## API reference
