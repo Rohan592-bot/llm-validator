@@ -2,11 +2,10 @@ const { z } = require("zod");
 
 function buildZodSchema(def) {
 
-  // ── Object: has named fields ─────────────────────────────
   if (def.type === "object" && def.fields) {
     const shape = {};
     for (const [key, value] of Object.entries(def.fields)) {
-      shape[key] = buildZodSchema(value); // recursively handle nested fields
+      shape[key] = buildZodSchema(value);
     }
     return z.object(shape);
   }
