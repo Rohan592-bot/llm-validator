@@ -1,15 +1,3 @@
-// helpers/buildPrompt.js
-// Two jobs:
-//   1. buildSystemPrompt() → creates the system prompt we send to Ollama
-//   2. buildExample()      → creates a fake filled-in example from a schema definition
-
-// ── buildExample ─────────────────────────────────────────────────────────────
-// Recursively creates a simple example value from a schema definition.
-// Used by the "few_shot" strategy to show the model what the output should look like.
-//
-// Example input:  { type: "object", fields: { name: { type: "string" }, score: { type: "number", min: 1 } } }
-// Example output: { name: "example", score: 1 }
-
 function buildExample(def) {
   if (def.type === "object" && def.fields) {
     const obj = {};
@@ -25,13 +13,6 @@ function buildExample(def) {
   if (def.type === "enum")    return def.values[0];
   return null;
 }
-
-// ── buildSystemPrompt ─────────────────────────────────────────────────────────
-// Three strategies for telling the model what format to return:
-//
-//   "json_instruction" → just tells the model what schema to follow (simple, direct)
-//   "few_shot"         → shows the model a filled example (helps when the model struggles)
-//   default            → same as json_instruction as a fallback
 
 function buildSystemPrompt(strategy, definition) {
   const schemaStr = JSON.stringify(definition, null, 2);
@@ -56,13 +37,8 @@ function buildSystemPrompt(strategy, definition) {
     ].join("\n");
   }
 
-  // Default fallback
   return `You are a helpful assistant. Respond ONLY with valid JSON.\nSchema:\n${schemaStr}`;
 }
-
-// ── buildCorrectionPrompt ─────────────────────────────────────────────────────
-// When a response fails validation, we send this on the next attempt.
-// It tells the model exactly what went wrong and asks it to try again.
 
 function buildCorrectionPrompt(definition, error) {
   return [
