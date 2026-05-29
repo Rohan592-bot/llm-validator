@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LLM Validator</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<div class="app">
+
+  <!-- Top bar -->
+  <header class="topbar">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      LLM Validator
+      <span class="logo-sep">|</span>
+      <span class="logo-sub">Schema Enforcer</span>
+    </div>
+    <span class="pill">v1.0</span>
+    
+    <!-- Theme Toggle Switch -->
+    <button id="theme-toggle" class="theme-toggle-btn" onclick="toggleTheme()" title="Toggle Light/Dark Theme">
+    </button>
+    
+    <div class="ollama-status">
+      <div class="status-dot" id="ollama-dot"></div>
+      <span id="ollama-label">Checking Ollama...</span>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="nav-section">Registry</div>
+    <div class="nav-item active" onclick="showPage('schemas',this)">
+      <span class="nav-icon">◫</span> Schemas
+    </div>
+
+    <div class="nav-section">Run</div>
+    <div class="nav-item" onclick="showPage('call',this)">
+      <span class="nav-icon">▷</span> Make a Call
+    </div>
+
+    <div class="nav-section">Monitor</div>
+    <div class="nav-item" onclick="showPage('failures',this)">
+      <span class="nav-icon">⚠</span> Failures
+      <span class="nav-badge" id="fail-badge">0</span>
+    </div>
+    <div class="nav-item" onclick="showPage('metrics',this)">
+      <span class="nav-icon">◈</span> Metrics
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <!-- ── SCHEMAS ── -->
+    <div id="page-schemas" class="page active">
+      <div class="page-title">Schema Registry</div>
+      <div class="page-desc">Register named JSON schemas. These define what shape you expect the LLM to return.</div>
+
+      <div class="card">
+        <div class="card-title">Register New Schema</div>
+        <div class="row2">
+          <div class="field">
+            <label>Schema Name</label>
+            <input id="s-name" placeholder="e.g. product_review" />
+          </div>
+          <div class="field" style="display:flex;align-items:flex-end;">
+            <div style="width:100%">
+              <label>Quick Fill &nbsp;<a class="hint-link" onclick="insertExample('basic')">basic object</a> · <a class="hint-link" onclick="insertExample('nested')">nested</a> · <a class="hint-link" onclick="insertExample('array')">array</a></label>
+              <div style="height:9px"></div>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Definition (JSON)</label>
+          <textarea id="s-def" rows="9" placeholder='{"type":"object","fields":{"title":{"type":"string","min":3},"score":{"type":"number","min":1,"max":10}}}'></textarea>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <button class="btn btn-primary" onclick="registerSchema()">Register Schema</button>
+          <span id="s-msg" style="font-size:12px;"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Registered Schemas</div>
+        <div id="schema-list"><div class="empty"><div class="empty-icon">◫</div><div class="empty-text">No schemas yet. Register one above.</div></div></div>
+      </div>
+    </div>
+
+    <!-- ── CALL ── -->
+    <div id="page-call" class="page">
+      <div class="page-title">Make a Validated Call</div>
+      <div class="page-desc">Send a prompt to Ollama. The response will be validated against your schema — and auto-corrected if it fails.</div>
+
+      <div class="card">
+        <div class="card-title">Call Settings</div>
+        <div class="row3">
+          <div class="field">
+            <label>Schema</label>
+            <select id="c-schema"><option value="">— select —</option></select>
+          </div>
+          <div class="field">
+            <label>Strategy</label>
+            <select id="c-strategy">
+              <option value="json_instruction">json_instruction</option>
+              <option value="few_shot">few_shot</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Ollama Model</label>
+            <input id="c-model" value="llama3" placeholder="llama3" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Prompt</label>
+          <textarea id="c-prompt" rows="4" placeholder="e.g. Write a short review for the movie Inception."></textarea>
+        </div>
+        <button class="btn btn-primary" id="call-btn" onclick="makeCall()">
+          <span>▷</span> Run Call
+        </button>
+      </div>
+
+      <!-- Result renders here -->
+      <div id="call-result"></div>
+    </div>
+
+    <!-- ── FAILURES ── -->
+    <div id="page-failures" class="page">
+      <div class="page-title">Failure Log</div>
+      <div class="page-desc">Every call that failed all 3 validation attempts is logged here.</div>
+      <div style="margin-bottom:16px;">
+        <button class="btn btn-ghost btn-sm" onclick="loadFailures()">↻ Refresh</button>
+      </div>
+      <div id="failures-list"></div>
+    </div>
+
+    <!-- ── METRICS ── -->
+    <div id="page-metrics" class="page">
+      <div class="page-title">Metrics</div>
+      <div class="page-desc">Pass rates and performance breakdown by schema and strategy.</div>
+      <div style="margin-bottom:16px;">
+        <button class="btn btn-ghost btn-sm" onclick="loadMetrics()">↻ Refresh</button>
+      </div>
+      <div id="metrics-list"></div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const API = 'http://localhost:3000';
+
+// ── Theme Switcher ────────────────────────────────────────────────────────────
+function initTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  updateThemeUI(savedTheme);
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  let target = 'light';
+  if (current === 'light') {
+    target = 'dark';
+  } else {
+    target = 'light';
+  }
+  
+  document.documentElement.setAttribute('data-theme', target);
+  localStorage.setItem('theme', target);
+  updateThemeUI(target);
+}
+
+const SUN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>`;
+const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`;
+
+function updateThemeUI(theme) {
+  const btn = document.getElementById('theme-toggle');
+  if (btn !== null) {
+    if (theme === 'light') {
+      btn.innerHTML = SUN_SVG;
+      btn.setAttribute('title', 'Switch to Dark Mode');
+    } else {
+      btn.innerHTML = MOON_SVG;
+      btn.setAttribute('title', 'Switch to Light Mode');
+    }
+  }
+}
+initTheme();
+
+// ── Copy to Clipboard ─────────────────────────────────────────────────────────
+function copyCode(btn) {
+  const container = btn.closest('.code-container');
+  const codeBlock = container.querySelector('.code-block');
+  const text = codeBlock.textContent || codeBlock.innerText;
+
+  navigator.clipboard.writeText(text).then(function() {
+    const originalText = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    
+    setTimeout(function() {
+      btn.textContent = originalText;
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(function(err) {
+    console.error('Failed to copy text: ', err);
+  });
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function showPage(name, el) {
+  const pages = document.querySelectorAll('.page');
+  for (let i = 0; i < pages.length; i++) {
+    pages[i].classList.remove('active');
+  }
+  
+  const navItems = document.querySelectorAll('.nav-item');
+  for (let i = 0; i < navItems.length; i++) {
+    navItems[i].classList.remove('active');
+  }
+
+  document.getElementById('page-' + name).classList.add('active');
+  
+  if (el !== undefined && el !== null) {
+    el.classList.add('active');
+  }
+  
+  if (name === 'call') {
+    loadSchemaOptions();
+  }
+  if (name === 'failures') {
+    loadFailures();
+  }
+  if (name === 'metrics') {
+    loadMetrics();
+  }
+}
+
+// ── Ollama status check ───────────────────────────────────────────────────────
+async function checkOllama() {
+  try {
+    const r = await fetch('http://localhost:11434/api/tags');
+    if (r.ok === true) {
+      document.getElementById('ollama-dot').classList.add('ok');
+      document.getElementById('ollama-label').textContent = 'Ollama connected';
+    }
+  } catch (err) {
+    document.getElementById('ollama-label').textContent = 'Ollama not found';
+  }
+}
+checkOllama();
+
+// ── Quick-fill examples ───────────────────────────────────────────────────────
+const EXAMPLES = {
+  basic: { type: "object", fields: { title: { type: "string", min: 3 }, rating: { type: "number", min: 1, max: 5 }, recommended: { type: "boolean" } } },
+  nested: { type: "object", fields: { movie: { type: "object", fields: { title: { type: "string" }, year: { type: "number" } } }, review: { type: "string" }, score: { type: "number", min: 1, max: 10 } } },
+  array: { type: "object", fields: { items: { type: "array", items: { type: "string" } }, count: { type: "number" } } },
+};
+function insertExample(key) {
+  document.getElementById('s-def').value = JSON.stringify(EXAMPLES[key], null, 2);
+}
+
+// ── Schemas ───────────────────────────────────────────────────────────────────
+async function registerSchema() {
+  const name = document.getElementById('s-name').value.trim();
+  const raw = document.getElementById('s-def').value.trim();
+  const msg = document.getElementById('s-msg');
+
+  if (name === "" || raw === "") {
+    showMsg(msg, 'Name and definition are required.', 'danger');
+    return;
+  }
+  
+  let def;
+  try {
+    def = JSON.parse(raw);
+  } catch (e) {
+    showMsg(msg, 'Invalid JSON — check your definition.', 'danger');
+    return;
+  }
+
+  const r = await fetch(API + '/schemas', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name, definition: def })
+  });
+  
+  const d = await r.json();
+  if (d.ok === true) {
+    showMsg(msg, '"' + name + '" registered successfully.', 'success');
+    document.getElementById('s-name').value = '';
+    document.getElementById('s-def').value = '';
+    loadSchemas();
+  } else {
+    showMsg(msg, d.error, 'danger');
+  }
+}
+
+function showMsg(el, text, type) {
+  el.className = 'tag tag-' + type;
+  el.textContent = text;
+  setTimeout(function() {
+    el.textContent = '';
+    el.className = '';
+  }, 4000);
+}
+
+async function loadSchemas() {
+  const r = await fetch(API + '/schemas');
+  const schemas = await r.json();
+  const el = document.getElementById('schema-list');
+  
+  if (schemas.length === 0) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">◫</div><div class="empty-text">No schemas yet.</div></div>';
+    return;
+  }
+
+  // Build the list using a standard for loop instead of map
+  let html = "";
+  for (let i = 0; i < schemas.length; i++) {
+    const s = schemas[i];
+    
+    let fieldCount = 0;
+    if (s.definition.fields !== undefined) {
+      fieldCount = Object.keys(s.definition.fields).length;
+    }
+    
+    let dateStr = "";
+    if (s.created_at !== undefined && s.created_at !== null) {
+      dateStr = s.created_at.slice(0, 16);
+    }
+    
+    const typeStr = s.definition.type || 'any';
+
+    html = html + `
+      <div class="schema-row">
+        <div>
+          <div class="schema-name-text">${esc(s.name)}</div>
+          <div class="schema-meta">${esc(typeStr)} · ${fieldCount} fields · ${dateStr}</div>
+        </div>
+        <span class="tag tag-info">${esc(typeStr)}</span>
+        <button class="btn btn-danger btn-sm" onclick="deleteSchema('${esc(s.name)}')">Delete</button>
+      </div>
+    `;
+  }
+  
+  el.innerHTML = html;
+}
+
+async function deleteSchema(name) {
+  const confirmResult = confirm('Delete schema "' + name + '"?');
+  if (confirmResult === false) {
+    return;
+  }
+  await fetch(API + '/schemas/' + name, { method: 'DELETE' });
+  loadSchemas();
+}
+
+// ── Call page ─────────────────────────────────────────────────────────────────
+async function loadSchemaOptions() {
+  const r = await fetch(API + '/schemas');
+  const schemas = await r.json();
+  const sel = document.getElementById('c-schema');
+  
+  let optionsHtml = '<option value="">— select schema —</option>';
+  for (let i = 0; i < schemas.length; i++) {
+    const s = schemas[i];
+    optionsHtml = optionsHtml + `<option value="${esc(s.name)}">${esc(s.name)}</option>`;
+  }
+  
+  sel.innerHTML = optionsHtml;
+}
+
+async function makeCall() {
+  const schema_name = document.getElementById('c-schema').value;
+  const strategy    = document.getElementById('c-strategy').value;
+  const model       = document.getElementById('c-model').value.trim() || 'llama3';
+  const prompt      = document.getElementById('c-prompt').value.trim();
+  
+  if (schema_name === "" || prompt === "") {
+    alert('Please select a schema and enter a prompt.');
+    return;
+  }
+
+  const btn = document.getElementById('call-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Running...';
+  document.getElementById('call-result').innerHTML = '';
+
+  try {
+    const r = await fetch(API + '/call', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ schema_name: schema_name, prompt: prompt, model: model, strategy: strategy })
+    });
+    const d = await r.json();
+    renderResult(d);
+  } catch(e) {
+    document.getElementById('call-result').innerHTML = `<div class="alert alert-danger">⚠ Network error: ${esc(e.message)}</div>`;
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<span>▷</span> Run Call';
+  loadFailureBadge();
+}
+
+function renderResult(d) {
+  const el = document.getElementById('call-result');
+
+  // Build attempts list using standard for loop
+  let attemptsHtml = "";
+  const attemptsList = d.attempts || [];
+  for (let i = 0; i < attemptsList.length; i++) {
+    const a = attemptsList[i];
+    
+    let statusTag = `<span class="tag tag-success">Passed</span>`;
+    let errorDetail = "";
+    
+    if (a.error !== null) {
+      statusTag = `<span class="tag tag-danger">Failed</span><span style="font-size:12px;color:var(--danger);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(a.error)}</span>`;
+      errorDetail = `<div style="margin-top:12px;"><div class="attempt-label">Validation Error</div><div class="alert alert-danger" style="margin-top:4px;">${esc(a.error)}</div></div>`;
+    }
+    
+    attemptsHtml = attemptsHtml + `
+      <div class="attempt-item">
+        <div class="attempt-header" onclick="toggleAttempt(this)">
+          <span class="attempt-num">Attempt ${a.attempt}</span>
+          ${statusTag}
+          <span style="font-size:12px;color:var(--muted);margin-left:auto;">▾</span>
+        </div>
+        <div class="attempt-body">
+          <div class="attempt-label">Raw LLM Response</div>
+          <div class="code-container ${a.error ? 'error-code-container' : 'success-code-container'}">
+            <div class="code-block-header">
+              <div class="window-controls">
+                <span class="dot close"></span>
+                <span class="dot minimize"></span>
+                <span class="dot expand"></span>
+              </div>
+              <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            </div>
+            <div class="code-block">${esc(a.raw || '')}</div>
+          </div>
+          ${errorDetail}
+        </div>
+      </div>
+    `;
+  }
+
+  let successBadge = '<span class="tag tag-danger">✗ Failed</span>';
+  if (d.success === true) {
+    successBadge = '<span class="tag tag-success">✓ Success</span>';
+  }
+  
+  let correctionBadge = "";
+  if (d.success === true && d.correction_needed === true) {
+    correctionBadge = '<span class="tag tag-warn">Auto-corrected</span>';
+  }
+
+  let tokensBadge = "";
+  if (d.total_tokens !== undefined && d.total_tokens !== null && d.total_tokens > 0) {
+    tokensBadge = `<span>◈ ${d.total_tokens} tokens</span>`;
+  }
+
+  let validatedOutputHtml = "";
+  if (d.output !== undefined && d.output !== null) {
+    validatedOutputHtml = `
+      <div class="card-title">Validated Output</div>
+      <div class="code-container success-code-container">
+        <div class="code-block-header">
+          <div class="window-controls">
+            <span class="dot close"></span>
+            <span class="dot minimize"></span>
+            <span class="dot expand"></span>
+          </div>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+        <div class="code-block">${esc(JSON.stringify(d.output, null, 2))}</div>
+      </div>
+      <hr/>
+    `;
+  }
+
+  let globalErrorHtml = "";
+  if (d.error !== undefined && d.error !== null) {
+    globalErrorHtml = `<div class="alert alert-danger" style="margin-bottom:12px;">${esc(d.error)}</div>`;
+  }
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="result-header">
+        ${successBadge}
+        ${correctionBadge}
+        <div class="result-meta">
+          <span>⏱ ${d.total_latency_ms || 0}ms</span>
+          <span>⟳ ${d.attempt_count || 0} attempt${d.attempt_count !== 1 ? 's' : ''}</span>
+          ${tokensBadge}
+        </div>
+      </div>
+
+      ${validatedOutputHtml}
+      ${globalErrorHtml}
+
+      <div class="card-title">Attempt Log</div>
+      <div class="attempts-list">${attemptsHtml}</div>
+    </div>
+  `;
+}
+
+function toggleAttempt(header) {
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
+}
+
+// ── Failures ──────────────────────────────────────────────────────────────────
+async function loadFailures() {
+  const r = await fetch(API + '/failures');
+  const data = await r.json();
+  const el = document.getElementById('failures-list');
+
+  if (data.length === 0) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">✓</div><div class="empty-text">No failures yet — great!</div></div>';
+    return;
+  }
+
+  // Render failure cards using for loops
+  let html = "";
+  for (let i = 0; i < data.length; i++) {
+    const f = data[i];
+    
+    let attemptsListHtml = "";
+    const attemptsList = f.attempts || [];
+    for (let j = 0; j < attemptsList.length; j++) {
+      const a = attemptsList[j];
+      attemptsListHtml = attemptsListHtml + `
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;">
+          <span class="tag tag-muted" style="min-width:80px;justify-content:center;">Attempt ${a.attempt}</span>
+          <span style="font-size:13px;color:var(--danger);font-weight:500;padding-top:2px;">${esc(a.error || 'No error recorded')}</span>
+        </div>
+      `;
+    }
+
+    let dateStr = "";
+    if (f.created_at !== undefined && f.created_at !== null) {
+      dateStr = f.created_at.slice(0, 16);
+    }
+
+    html = html + `
+      <div class="failure-card">
+        <div class="failure-card-header">
+          <span class="tag tag-danger">Failed</span>
+          <span style="font-family:var(--mono);font-size:12px;font-weight:600;">${esc(f.schema_name)}</span>
+          <span style="font-size:12px;color:var(--muted);margin-left:auto;">${dateStr}</span>
+          <span class="tag tag-muted">${esc(f.model)}</span>
+        </div>
+        <div class="failure-card-body">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:700;">Prompt</div>
+          <div class="failure-prompt">${esc(f.prompt)}</div>
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;font-weight:700;">Errors per attempt</div>
+          ${attemptsListHtml}
+        </div>
+      </div>
+    `;
+  }
+  
+  el.innerHTML = html;
+}
+
+async function loadFailureBadge() {
+  try {
+    const r = await fetch(API + '/failures');
+    const data = await r.json();
+    const badge = document.getElementById('fail-badge');
+    
+    if (data.length > 0) {
+      badge.textContent = data.length;
+      badge.classList.add('show');
+    } else {
+      badge.classList.remove('show');
+    }
+  } catch (err) { }
+}
+
+// ── Metrics ───────────────────────────────────────────────────────────────────
+async function loadMetrics() {
+  const r = await fetch(API + '/metrics');
+  const data = await r.json();
+  const el = document.getElementById('metrics-list');
+  
+  if (data.length === 0) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">◈</div><div class="empty-text">No data yet — make some calls first.</div></div>';
+    return;
+  }
+
+  // Calculate totals and averages using standard loops instead of reduce
+  let total = 0;
+  let passed = 0;
+  let attemptsSum = 0;
+  for (let i = 0; i < data.length; i++) {
+    total = total + data[i].total;
+    passed = passed + data[i].passed;
+    attemptsSum = attemptsSum + data[i].avg_attempts;
+  }
+
+  let pct = 0;
+  if (total > 0) {
+    pct = Math.round((passed / total) * 100);
+  }
+
+  let avgAtt = "0.0";
+  if (data.length > 0) {
+    avgAtt = (attemptsSum / data.length).toFixed(1);
+  }
+
+  // Build breakdown list manually
+  let breakdownHtml = "";
+  for (let i = 0; i < data.length; i++) {
+    const d = data[i];
+    
+    let rate = 0;
+    if (d.total > 0) {
+      rate = Math.round((d.passed / d.total) * 100);
+    }
+    
+    let cls = "";
+    if (rate >= 80) {
+      cls = "";
+    } else if (rate >= 50) {
+      cls = "mid";
+    } else {
+      cls = "low";
+    }
+
+    let colorStyle = "var(--danger)";
+    if (rate >= 80) {
+      colorStyle = "var(--success)";
+    } else if (rate >= 50) {
+      colorStyle = "var(--warn)";
+    }
+
+    const latencyRound = Math.round(d.avg_latency);
+    const attemptsRound = Number(d.avg_attempts).toFixed(1);
+
+    breakdownHtml = breakdownHtml + `
+      <div class="metric-row">
+        <div>
+          <div class="metric-schema">${esc(d.schema_name)}</div>
+          <div style="margin-top:4px;"><span class="tag tag-info" style="font-size:10px;padding:1px 6px;">${esc(d.strategy)}</span></div>
+        </div>
+        <div class="metric-bar-wrap">
+          <div class="progress"><div class="progress-fill ${cls}" style="width:${rate}%"></div></div>
+        </div>
+        <div class="metric-pct" style="color:${colorStyle}">${rate}%</div>
+        <div class="metric-extra">${d.passed}/${d.total} · avg ${attemptsRound} att · ${latencyRound}ms</div>
+      </div>
+    `;
+  }
+
+  el.innerHTML = `
+    <div class="row3" style="margin-bottom:24px;">
+      <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">Total Calls</div></div>
+      <div class="stat-card"><div class="stat-num">${pct}%</div><div class="stat-label">Overall Pass Rate</div></div>
+      <div class="stat-card"><div class="stat-num">${avgAtt}</div><div class="stat-label">Avg Attempts</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Breakdown by Schema + Strategy</div>
+      ${breakdownHtml}
+    </div>
+  `;
+}
+
+function esc(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Init
+loadSchemas();
+loadFailureBadge();
+</script>
+</body>
+</html>

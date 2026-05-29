@@ -1,0 +1,261 @@
+[
+  {
+    "schema": "movie_review",
+    "strategy": "json_instruction",
+    "model": "llama3",
+    "prompts": [
+      {
+        "label": "easy — clear task",
+        "prompt": "Write a review for the movie Interstellar.",
+        "expected_result": "pass on attempt 1"
+      },
+      {
+        "label": "medium — conversational phrasing",
+        "prompt": "What do you think about the movie Inception? Give me your thoughts.",
+        "expected_result": "may trigger auto-correct"
+      },
+      {
+        "label": "hard — completely unrelated",
+        "prompt": "Just say hello and tell me your name.",
+        "expected_result": "likely fail all 3 attempts"
+      }
+    ]
+  },
+  {
+    "schema": "person_profile",
+    "strategy": "json_instruction",
+    "model": "llama3",
+    "prompts": [
+      {
+        "label": "easy — specific character",
+        "prompt": "Describe a fictional software engineer named Rohan who is 24 years old and lives in Bangalore.",
+        "expected_result": "pass on attempt 1"
+      },
+      {
+        "label": "medium — vague request",
+        "prompt": "Tell me about someone interesting.",
+        "expected_result": "may trigger auto-correct"
+      },
+      {
+        "label": "hard — unrelated topic",
+        "prompt": "Explain how black holes are formed.",
+        "expected_result": "likely fail all 3 attempts"
+      }
+    ]
+  },
+  {
+    "schema": "product_listing",
+    "strategy": "few_shot",
+    "model": "llama3",
+    "prompts": [
+      {
+        "label": "easy — specific product",
+        "prompt": "Create a product listing for a mechanical keyboard.",
+        "expected_result": "pass on attempt 1"
+      },
+      {
+        "label": "medium — salesperson tone",
+        "prompt": "Tell me about the Apple iPhone 15 as if you are a salesperson.",
+        "expected_result": "may trigger auto-correct"
+      },
+      {
+        "label": "hard — abstract topic",
+        "prompt": "What is the meaning of life?",
+        "expected_result": "likely fail all 3 attempts"
+      }
+    ]
+  },
+  {
+    "schema": "book_summary",
+    "strategy": "json_instruction",
+    "model": "llama3",
+    "prompts": [
+      {
+        "label": "easy — classic book",
+        "prompt": "Summarize the book 1984 by George Orwell.",
+        "expected_result": "pass on attempt 1"
+      },
+      {
+        "label": "medium — open ended",
+        "prompt": "Recommend me a good book to read this weekend.",
+        "expected_result": "may trigger auto-correct"
+      },
+      {
+        "label": "hard — unrelated",
+        "prompt": "Tell me a joke.",
+        "expected_result": "likely fail all 3 attempts"
+      }
+    ]
+  },
+  {
+    "schema": "weather_report",
+    "strategy": "json_instruction",
+    "model": "llama3",
+    "prompts": [
+      {
+        "label": "easy — specific city",
+        "prompt": "Give me a weather report for Mumbai in July.",
+        "expected_result": "pass on attempt 1"
+      },
+      {
+        "label": "medium — poetic phrasing",
+        "prompt": "Describe a rainy autumn day in London.",
+        "expected_result": "may trigger auto-correct"
+      },
+      {
+        "label": "hard — unrelated",
+        "prompt": "Write a poem about the ocean.",
+        "expected_result": "likely fail all 3 attempts"
+      }
+    ]
+  },
+  {
+    "schema": "recipe",
+    "strategy": "few_shot",
+    "model": "llama3",
+    "prompts": [
+      {
+        "label": "easy — classic dish",
+        "prompt": "Give me a recipe for spaghetti carbonara.",
+        "expected_result": "pass on attempt 1"
+      },
+      {
+        "label": "medium — vague",
+        "prompt": "What should I cook for dinner tonight? Something quick.",
+        "expected_result": "may trigger auto-correct"
+      },
+      {
+        "label": "hard — unrelated",
+        "prompt": "How do I fix a leaking tap?",
+        "expected_result": "likely fail all 3 attempts"
+      }
+    ]
+  },
+  {
+    "schema": "job_posting",
+    "strategy": "json_instruction",
+    "model": "llama3",
+    "prompts": [
+      {
+        "label": "easy — specific role",
+        "prompt": "Write a job posting for a senior React developer at a startup in Bangalore with a salary between $40,000 and $60,000 USD. The role is remote.",
+        "expected_result": "pass on attempt 1"
+      },
+      {
+        "label": "medium — minimal info",
+        "prompt": "Create a job listing for a designer.",
+        "expected_result": "may trigger auto-correct"
+      }
+    ]
+  },
+  {
+    "schema": "country_fact",
+    "strategy": "json_instruction",
+    "model": "llama3",
+    "prompts": [
+      {
+        "label": "easy — well known country",
+        "prompt": "Give me key facts about Japan.",
+        "expected_result": "pass on attempt 1"
+      },
+      {
+        "label": "easy — another country",
+        "prompt": "Tell me facts about Brazil.",
+        "expected_result": "pass on attempt 1"
+      },
+      {
+        "label": "easy — Indian subcontinent",
+        "prompt": "Give me key facts about India.",
+        "expected_result": "pass on attempt 1"
+      }
+    ]
+  },
+  {
+    "schema": "fitness_plan",
+    "strategy": "few_shot",
+    "model": "llama3",
+    "prompts": [
+      {
+        "label": "easy — clear goal",
+        "prompt": "Create a 4-day beginner fitness plan focused on weight loss.",
+        "expected_result": "pass on attempt 1"
+      },
+      {
+        "label": "medium — vague",
+        "prompt": "Help me get fit.",
+        "expected_result": "may trigger auto-correct"
+      },
+      {
+        "label": "hard — unrelated",
+        "prompt": "What is the capital of France?",
+        "expected_result": "likely fail all 3 attempts"
+      }
+    ]
+  },
+  {
+    "schema": "news_article",
+    "strategy": "json_instruction",
+    "model": "llama3",
+    "prompts": [
+      {
+        "label": "easy — specific event",
+        "prompt": "Write a short news article about a new AI chip being released by a tech company.",
+        "expected_result": "pass on attempt 1"
+      },
+      {
+        "label": "medium — vague topic",
+        "prompt": "Something happened in the world today, write about it.",
+        "expected_result": "may trigger auto-correct"
+      },
+      {
+        "label": "hard — unrelated",
+        "prompt": "Recite the alphabet.",
+        "expected_result": "likely fail all 3 attempts"
+      }
+    ]
+  },
+  {
+    "schema": "restaurant_review",
+    "strategy": "json_instruction",
+    "model": "llama3",
+    "prompts": [
+      {
+        "label": "easy — specific restaurant",
+        "prompt": "Write a review for a mid-range Italian restaurant in Mumbai where the pasta was great but the service was slow.",
+        "expected_result": "pass on attempt 1"
+      },
+      {
+        "label": "medium — casual phrasing",
+        "prompt": "We went out for dinner last night, it was decent I guess.",
+        "expected_result": "may trigger auto-correct"
+      },
+      {
+        "label": "hard — unrelated",
+        "prompt": "Explain the theory of relativity.",
+        "expected_result": "likely fail all 3 attempts"
+      }
+    ]
+  },
+  {
+    "schema": "bug_report",
+    "strategy": "few_shot",
+    "model": "llama3",
+    "prompts": [
+      {
+        "label": "easy — clear bug",
+        "prompt": "Write a bug report for an issue where clicking the Submit button on a login form does nothing when the password field is empty.",
+        "expected_result": "pass on attempt 1"
+      },
+      {
+        "label": "medium — casual description",
+        "prompt": "The app crashes sometimes when I open it on my phone.",
+        "expected_result": "may trigger auto-correct"
+      },
+      {
+        "label": "hard — unrelated",
+        "prompt": "What is your favourite colour?",
+        "expected_result": "likely fail all 3 attempts"
+      }
+    ]
+  }
+]

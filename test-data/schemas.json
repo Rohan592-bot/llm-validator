@@ -1,0 +1,179 @@
+[
+  {
+    "name": "movie_review",
+    "description": "A structured movie review with rating and tags",
+    "definition": {
+      "type": "object",
+      "fields": {
+        "title":       { "type": "string", "min": 2 },
+        "rating":      { "type": "number", "min": 1, "max": 10 },
+        "summary":     { "type": "string", "min": 10 },
+        "recommended": { "type": "boolean" },
+        "tags":        { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  {
+    "name": "person_profile",
+    "description": "Basic personal info of a fictional person",
+    "definition": {
+      "type": "object",
+      "fields": {
+        "name":       { "type": "string", "min": 2 },
+        "age":        { "type": "number", "min": 1, "max": 120 },
+        "occupation": { "type": "string" },
+        "city":       { "type": "string" },
+        "is_student": { "type": "boolean" }
+      }
+    }
+  },
+  {
+    "name": "product_listing",
+    "description": "An e-commerce product listing",
+    "definition": {
+      "type": "object",
+      "fields": {
+        "product_name": { "type": "string", "min": 3 },
+        "price_usd":    { "type": "number", "min": 0 },
+        "in_stock":     { "type": "boolean" },
+        "category":     { "type": "string" },
+        "features":     { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  {
+    "name": "book_summary",
+    "description": "A short summary of a book with genre and rating",
+    "definition": {
+      "type": "object",
+      "fields": {
+        "title":   { "type": "string" },
+        "author":  { "type": "string" },
+        "genre":   { "type": "string" },
+        "pages":   { "type": "number", "min": 1 },
+        "rating":  { "type": "number", "min": 1, "max": 5 },
+        "summary": { "type": "string", "min": 20 }
+      }
+    }
+  },
+  {
+    "name": "weather_report",
+    "description": "A daily weather report for a city",
+    "definition": {
+      "type": "object",
+      "fields": {
+        "city":          { "type": "string" },
+        "temperature_c": { "type": "number", "min": -60, "max": 60 },
+        "humidity_pct":  { "type": "number", "min": 0, "max": 100 },
+        "condition":     { "type": "string" },
+        "rain_expected": { "type": "boolean" }
+      }
+    }
+  },
+  {
+    "name": "recipe",
+    "description": "A cooking recipe with ingredients and steps",
+    "definition": {
+      "type": "object",
+      "fields": {
+        "name":          { "type": "string" },
+        "cuisine":       { "type": "string" },
+        "prep_time_min": { "type": "number", "min": 1 },
+        "servings":      { "type": "number", "min": 1 },
+        "ingredients":   { "type": "array", "items": { "type": "string" } },
+        "steps":         { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  {
+    "name": "job_posting",
+    "description": "A job listing with role, salary and requirements",
+    "definition": {
+      "type": "object",
+      "fields": {
+        "job_title":      { "type": "string" },
+        "company":        { "type": "string" },
+        "location":       { "type": "string" },
+        "salary_usd_min": { "type": "number", "min": 0 },
+        "salary_usd_max": { "type": "number", "min": 0 },
+        "remote":         { "type": "boolean" },
+        "requirements":   { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  {
+    "name": "country_fact",
+    "description": "Key facts about a country",
+    "definition": {
+      "type": "object",
+      "fields": {
+        "country_name":  { "type": "string" },
+        "capital":       { "type": "string" },
+        "population":    { "type": "number", "min": 0 },
+        "area_km2":      { "type": "number", "min": 0 },
+        "languages":     { "type": "array", "items": { "type": "string" } },
+        "is_landlocked": { "type": "boolean" }
+      }
+    }
+  },
+  {
+    "name": "fitness_plan",
+    "description": "A weekly fitness plan for a person",
+    "definition": {
+      "type": "object",
+      "fields": {
+        "goal":           { "type": "string" },
+        "days_per_week":  { "type": "number", "min": 1, "max": 7 },
+        "duration_min":   { "type": "number", "min": 10 },
+        "exercises":      { "type": "array", "items": { "type": "string" } },
+        "difficulty":     { "type": "string" }
+      }
+    }
+  },
+  {
+    "name": "news_article",
+    "description": "A short news article with headline and category",
+    "definition": {
+      "type": "object",
+      "fields": {
+        "headline": { "type": "string", "min": 10 },
+        "category": { "type": "string" },
+        "author":   { "type": "string" },
+        "body":     { "type": "string", "min": 30 },
+        "breaking": { "type": "boolean" }
+      }
+    }
+  },
+  {
+    "name": "restaurant_review",
+    "description": "A restaurant review with food and service ratings",
+    "definition": {
+      "type": "object",
+      "fields": {
+        "restaurant_name": { "type": "string" },
+        "cuisine_type":    { "type": "string" },
+        "food_rating":     { "type": "number", "min": 1, "max": 5 },
+        "service_rating":  { "type": "number", "min": 1, "max": 5 },
+        "price_range":     { "type": "string" },
+        "would_return":    { "type": "boolean" },
+        "highlights":      { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  },
+  {
+    "name": "bug_report",
+    "description": "A software bug report with severity and steps",
+    "definition": {
+      "type": "object",
+      "fields": {
+        "title":               { "type": "string", "min": 5 },
+        "severity":            { "type": "string" },
+        "component":           { "type": "string" },
+        "steps_to_reproduce":  { "type": "array", "items": { "type": "string" } },
+        "expected":            { "type": "string" },
+        "actual":              { "type": "string" },
+        "reproducible":        { "type": "boolean" }
+      }
+    }
+  }
+]
